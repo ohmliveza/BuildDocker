@@ -1,13 +1,29 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine. See: https://circleci.com/docs/2.0/configuration-reference
-version: 2.1
-# Use a package of configuration called an orb.
-orbs:
-  # Declare a dependency on the welcome-orb
-  welcome: circleci/welcome-orb@0.4.1
-# Orchestrate or schedule a set of jobs
-workflows:
-  # Name the workflow "welcome"
-  welcome:
-    # Run the welcome/run job in its own container
-    jobs:
-      - welcome/run
+version: 2
+jobs:
+  build:
+    docker:
+      -image: circleci/node:8.11.1-stretch
+    working_directory: ~/repo
+    step:
+      -checkout
+      - restory_cache:
+        keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          - v1-dependencies-
+      - run: npm instrall
+      - save_cache:
+        paths:
+          -node_modules
+        key: v1-dependencies-{{ checksum "package.json" }}
+      - run: npm test
+      - setup_remote_docker
+      - run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+      - run:
+        name: "Build docker image and push to docker hub"
+        command: |
+          cp Dockerfile.production Dockerfile
+          docker build -t ohmliveza/dockerproject:lastest .
+          docker build -t ohmliveza/dockerproject:${CIRCLE_SHA1} .
+          docker push ohmliveza/dockerproject:lastest
+          docker push ohmliveza/dockerproject:${CIRCLE_SHA1}
+      - run: echo Done

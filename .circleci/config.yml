@@ -4,13 +4,13 @@ jobs:
     docker:
       -image: circleci/node:8.11.1-stretch
     working_directory: ~/repo
-    step:
+    steps:
       -checkout
-      - restory_cache:
+      - restore_cache:
         keys:
           - v1-dependencies-{{ checksum "package.json" }}
           - v1-dependencies-
-      - run: npm instrall
+      - run: npm install
       - save_cache:
         paths:
           -node_modules
